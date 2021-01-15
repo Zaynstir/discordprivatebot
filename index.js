@@ -143,6 +143,7 @@ function deleteShit(name, msg) {
     }
 }
 
+/*
 async function createRoom(room, role, msg) {
     msg.guild.channels.create(room, {
         type: 'voice',
@@ -176,3 +177,4 @@ async function addPRRole(role, user, msg) {
 async function extendTime() {
 
 }
+*/
