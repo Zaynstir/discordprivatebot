@@ -4,6 +4,7 @@ const config = require('./config.json');
 const prefix = config['Prefix'];
 
 let timer;
+let PCCategoryID = "799508602326745118";
 
 bot.login(config['BOT_TOKEN']);
 
@@ -12,6 +13,7 @@ bot.once('ready', () => {
 });
 
 bot.on('message', msg => {
+    //console.log("New Stuff");
     console.log(msg.content);
     //console.log(msg.content.startsWith(prefix) ? "true" : "false");
     //console.log(msg.member);
@@ -28,6 +30,7 @@ bot.on('message', msg => {
         let submitted = msg.author;
         //args.shift().toLowerCase();
         let name = args.shift().toLowerCase();
+        console.log("User [" + submitted.username + "] is attempting to create PR with a name of [" + name + "]");
         //msg.guild.roles.cache.each(role => { console.log(role.id) });
         let roleNameFlag = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
         let channelNameFlag = msg.guild.channels.cache.find(channel => channel.name.toLowerCase() === name);
@@ -58,7 +61,7 @@ bot.on('message', msg => {
                 msg.guild.channels.create(name, {
                     type: 'voice',
                     reason: 'privateroom',
-                    parent: "799508602326745118",
+                    parent: PCCategoryID,
                     permissionOverwrites: [
                         {
                             id: role.id,
@@ -70,7 +73,10 @@ bot.on('message', msg => {
                         }
                     ]
                 }).then((channel) => {
-                    setTimeout(() => { setTimer(channel, name, msg) }, 10000);
+                    console.log("PR channel and role has been created");
+                    setTimeout(() => { setTimer(channel, name, msg) }, 600000);
+                    //console.log(channel.parent);
+                    //console.log(channel.parentID);
                     /*setTimeout(() => {
                         let mems = channel.members;
                         console.log("test");
@@ -97,6 +103,9 @@ bot.on('message', msg => {
             });*/
 
             //console.log(ray);
+        }
+        else {
+            console.log("PR failed due to existing channel or role of the same name");
         }
 
     }
@@ -135,11 +144,16 @@ function deleteShit(name, msg) {
 
     //let channel = bot.guilds.get('729219573290762282').channels.cache.find(c => c.id == channelID);
     //console.log(channel);
-    if (roleNameFlag !== undefined) roleNameFlag.delete();
     if (channelNameFlag !== undefined) {
-        const everyoneRole = msg.guild.roles.cache.find(role => role.name.toLowerCase() === "@everyone");
-        //channelNameFlag.overwritePermissions(everyoneRole, { 'CONNECT': true });
-        channelNameFlag.delete();
+        if (channelNameFlag.parentID == PCCategoryID) {
+            const everyoneRole = msg.guild.roles.cache.find(role => role.name.toLowerCase() === "@everyone");
+            //channelNameFlag.overwritePermissions(everyoneRole, { 'CONNECT': true });
+            channelNameFlag.delete();
+            if (roleNameFlag !== undefined) roleNameFlag.delete();
+        }
+        else {
+            console.log("User [" + msg.author.username + "] tried to delete a none PR channel/role.");
+        }
     }
 }
 
