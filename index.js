@@ -5,6 +5,7 @@ const prefix = config['Prefix'];
 
 let timer;
 let PCCategoryID = "799508602326745118";
+let rooms = {};
 
 bot.login(config['BOT_TOKEN']);
 
@@ -56,6 +57,15 @@ bot.on('message', msg => {
             }).then(role => {
                 msg.member.roles.add(role);
 
+                //rooms[msg.author].push(role);
+                if (Array.isArray(rooms[msg.author.id])) {
+                    rooms[msg.author.id].push(role.id);
+                }
+                else {
+                    rooms[msg.author.id] = [];
+                    rooms[msg.author.id].push(role.id);
+                }
+                console.log(rooms);
                 const everyoneRole = msg.guild.roles.cache.find(role => role.name.toLowerCase() === "@everyone");
 
                 msg.guild.channels.create(name, {
@@ -74,7 +84,7 @@ bot.on('message', msg => {
                     ]
                 }).then((channel) => {
                     console.log("PR channel and role has been created");
-                    setTimeout(() => { setTimer(channel, name, msg) }, 600000);
+                    setTimeout(() => { setTimer(channel, name, msg) }, 10000);
                     //console.log(channel.parent);
                     //console.log(channel.parentID);
                     /*setTimeout(() => {
@@ -113,7 +123,28 @@ bot.on('message', msg => {
         let name = args.shift().toLowerCase();
         deleteShit(name, msg)
     }
-
+    else if (cmd == "roleadd" || cmd == "ra") {
+        let name = args.shift().toLowerCase();
+        let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
+        if (role !== undefined) {
+            if (Array.isArray(rooms[msg.author.id]) && rooms[msg.author.id].find(r => r.id == role.id)) {
+                msg.mentions.members.each(member => {
+                    member.roles.add(role);
+                })
+            }
+        }
+    }
+    else if (cmd == "roleremove" || cmd == "rr") {
+        let name = args.shift().toLowerCase();
+        let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
+        if (role !== undefined) {
+            if (Array.isArray(rooms[msg.author.id]) && rooms[msg.author.id].find(r => r.id == role.id)) {
+                msg.mentions.members.each(member => {
+                    member.roles.remove(role);
+                })
+            }
+        }
+    }
 });
 
 function setTimer(channel, name, msg) {
@@ -134,7 +165,7 @@ function setTimer(channel, name, msg) {
         else {
             deleteShit(name, msg);
         }
-    }, 10000);
+    }, 1000);
 }
 
 function deleteShit(name, msg) {
@@ -150,6 +181,21 @@ function deleteShit(name, msg) {
             //channelNameFlag.overwritePermissions(everyoneRole, { 'CONNECT': true });
             channelNameFlag.delete();
             if (roleNameFlag !== undefined) roleNameFlag.delete();
+            if (rooms[msg.author.id] !== undefined) {
+                let idx = "";
+                for (let i = 0; i < rooms[msg.author.id].length; i++) {
+                    if (rooms[msg.author.id][i] == roleNameFlag.id)
+                        idx = i;
+                }
+                rooms[msg.author.id].splice(idx, 1);
+                if (rooms[msg.author.id].length < 1) {
+                    let roomKeys = Object.keys(rooms);
+                    let idx2 = roomKeys.find(key => key === msg.author.id);
+                    delete rooms[idx2];
+                }
+                console.log(rooms);
+            }
+
         }
         else {
             console.log("User [" + msg.author.username + "] tried to delete a none PR channel/role.");
