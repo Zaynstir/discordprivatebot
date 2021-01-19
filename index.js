@@ -5,12 +5,14 @@ const prefix = config['Prefix'];
 
 let timer;
 let PCCategoryID = "799508602326745118";
+let overrideID = "125760087221338114";
 let rooms = {};
 
 bot.login(config['BOT_TOKEN']);
 
 bot.once('ready', () => {
     console.log("Ready");
+
 });
 
 bot.on('message', msg => {
@@ -23,8 +25,15 @@ bot.on('message', msg => {
     let args = msg.content.slice(prefix.length).trim().split(' ');
     let cmd = args.shift().toLowerCase();
     if (cmd == "h") {
-        msg.channel.send(cmd);
-
+        //msg.channel.send(cmd);
+        let str = "Hello, I create private rooms so that people do their own thing if they want.\n";
+        str += "\nCommand List\n-------------------------\n";
+        str += "Prefix: !pr\n";
+        str += "add [name] [@username] ..... Ex: !pr add test @user1 @user2\n";
+        str += "delete [name] .... Ex: !pr delete test\n";
+        str += "addrole [@username] .... Ex: !pr addrole @user1 @user2\n";
+        str += "removerole [@username] .... Ex: !pr removerole @user1 @user2\n";
+        msg.channel.send(str);
         //msg.channel.send(args);
     }
     else if (cmd == "add" || cmd == "a") {
@@ -96,7 +105,9 @@ bot.on('message', msg => {
                             console.log('user id: ' + guildMember.user.id);
                         }
                     }, 5000);*/
+
                     msg.mentions.members.each(member => {
+                        //console.log(member.username);
                         member.roles.add(role);
                     })
                 }).catch(console.error);
@@ -123,27 +134,30 @@ bot.on('message', msg => {
         let name = args.shift().toLowerCase();
         deleteShit(name, msg)
     }
-    else if (cmd == "roleadd" || cmd == "ra") {
+    else if (cmd == "addrole" || cmd == "ar") {
         let name = args.shift().toLowerCase();
         let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
         if (role !== undefined) {
-            if (Array.isArray(rooms[msg.author.id]) && rooms[msg.author.id].find(r => r.id == role.id)) {
+            if (Array.isArray(rooms[msg.author.id]) && rooms[msg.author.id].find(r => r == role.id)) {
                 msg.mentions.members.each(member => {
                     member.roles.add(role);
                 })
-            }
-        }
+            } else { console.log("AR ERR: does not exist in array thing") }
+        } else { console.log("AR ERR: undefined role") }
     }
-    else if (cmd == "roleremove" || cmd == "rr") {
+    else if (cmd == "removerole" || cmd == "rr") {
         let name = args.shift().toLowerCase();
         let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
         if (role !== undefined) {
-            if (Array.isArray(rooms[msg.author.id]) && rooms[msg.author.id].find(r => r.id == role.id)) {
+            if (Array.isArray(rooms[msg.author.id]) && rooms[msg.author.id].find(r => r == role.id)) {
                 msg.mentions.members.each(member => {
                     member.roles.remove(role);
                 })
-            }
-        }
+            } else { console.log("RR ERR: does not exist in array thing") }
+        } else { console.log("RR ERR: undefined role") }
+    }
+    else if (cmd == "kick" || "k") {
+
     }
 });
 
