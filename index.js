@@ -24,19 +24,27 @@ bot.on('message', msg => {
     if (!msg.member) return;
     let args = msg.content.slice(prefix.length).trim().split(' ');
     let cmd = args.shift().toLowerCase();
-    if (cmd == "h") {
+    if (cmd == "help" || cmd == "-h") {
         //msg.channel.send(cmd);
         let str = "Hello, I create private rooms so that people do their own thing if they want.\n";
         str += "\nCommand List\n-------------------------\n";
         str += "Prefix: !pr\n";
-        str += "add [name] [@username] ..... Ex: !pr add test @user1 @user2\n";
+        /*str += "add [name] [@username] ..... Ex: !pr add test @user1 @user2\n";
         str += "delete [name] .... Ex: !pr delete test\n";
         str += "addrole [@username] .... Ex: !pr addrole @user1 @user2\n";
-        str += "removerole [@username] .... Ex: !pr removerole @user1 @user2\n";
+        str += "removerole [@username] .... Ex: !pr removerole @user1 @user2\n";*/
+
+
+        str += "\'add\', \'-a\' -- add a private room and role .... SYNTAX: !pr add [name] [@user1] [@user2]\n";
+        str += "\'delete\',\'-d\' -- delete a private room and role .... SYNTAX: !pr delete [name]\n";
+        str += "\'addrole\', \'-ar\' -- add a role to a user .... SYNTAX: !pr addrole [name] [@user1] [@user2]\n";
+        str += "\'removerole\', \'-rr\' -- remove a role from a user .... SYNTAX: !pr removerole [name] [@user1] [@user2]\n";
+
+
         msg.channel.send(str);
         //msg.channel.send(args);
     }
-    else if (cmd == "add" || cmd == "a") {
+    else if (cmd == "add" || cmd == "-a") {
         let submitted = msg.author;
         //args.shift().toLowerCase();
         let name = args.shift().toLowerCase();
@@ -92,7 +100,7 @@ bot.on('message', msg => {
                         }
                     ]
                 }).then((channel) => {
-                    console.log("PR channel and role has been created");
+                    console.log("PR channel and role [" + name + "] has been created");
                     setTimeout(() => { setTimer(channel, name, msg) }, 10000);
                     //console.log(channel.parent);
                     //console.log(channel.parentID);
@@ -130,11 +138,11 @@ bot.on('message', msg => {
         }
 
     }
-    else if (cmd == "delete" || cmd == "d") {
+    else if (cmd == "delete" || cmd == "-d") {
         let name = args.shift().toLowerCase();
         deleteShit(name, msg)
     }
-    else if (cmd == "addrole" || cmd == "ar") {
+    else if (cmd == "addrole" || cmd == "-ar") {
         let name = args.shift().toLowerCase();
         let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
         if (role !== undefined) {
@@ -145,7 +153,7 @@ bot.on('message', msg => {
             } else { console.log("AR ERR: does not exist in array thing") }
         } else { console.log("AR ERR: undefined role") }
     }
-    else if (cmd == "removerole" || cmd == "rr") {
+    else if (cmd == "removerole" || cmd == "-rr") {
         let name = args.shift().toLowerCase();
         let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
         if (role !== undefined) {
@@ -156,8 +164,18 @@ bot.on('message', msg => {
             } else { console.log("RR ERR: does not exist in array thing") }
         } else { console.log("RR ERR: undefined role") }
     }
-    else if (cmd == "kick" || "k") {
-
+    else if (cmd == "kick" || "-k") {
+        let channelname = msg.member.voice.channel.name;
+        //console.log(channelname);
+        const role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === channelname.toLowerCase());
+        if (Array.isArray(rooms[msg.author.id]) && rooms[msg.author.id].find(r => r == role.id)) {
+            msg.mentions.members.each(member => {
+                member.voice.setChannel(null);
+            });
+        }
+        else {
+            console.log(msg.author.username + " does not have the ability to disconnect users.");
+        }
     }
 });
 
@@ -207,7 +225,7 @@ function deleteShit(name, msg) {
                     let idx2 = roomKeys.find(key => key === msg.author.id);
                     delete rooms[idx2];
                 }
-                console.log(rooms);
+                //console.log(rooms);
             }
 
         }
