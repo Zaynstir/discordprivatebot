@@ -6,21 +6,29 @@ const prefix = config['Prefix'];
 //https://discord.com/oauth2/authorize?client_id=798368592277667840&scope=bot&permissions=2147483647
 
 let timer;
-//let PCCategoryID = "799508602326745118";
-let PCCategoryID = "801630815356059679";
+let PCCategoryIDa = "799508602326745118"; //BotServer
+let PCCategoryIDb = "801630815356059679"; //The Sandbox
 let overrideID = "125760087221338114";
-let rooms = {};
+let MBSID = "729219573290762282";
+let sandboxID = "591094590199824430";
+let rooms = {
+    [MBSID]: { "Users": {}, "PCCID": "799508602326745118" },
+    [sandboxID]: { "Users": {}, "PCCID": "801630815356059679" }
+};
+
+
+
 
 bot.login(config['BOT_TOKEN']);
 
 bot.once('ready', () => {
     console.log("Ready");
-
 });
 
 bot.on('message', msg => {
+    console.log(msg.guild.id);
     //console.log("New Stuff");
-    console.log(msg.content);
+    //console.log(msg.content);
     //console.log(msg.content.startsWith(prefix) ? "true" : "false");
     //console.log(msg.member);
     if (!msg.content.startsWith(prefix)) return;
@@ -79,20 +87,24 @@ bot.on('message', msg => {
                 msg.member.roles.add(role);
 
                 //rooms[msg.author].push(role);
-                if (Array.isArray(rooms[msg.author.id])) {
-                    rooms[msg.author.id].push(role.id);
+                /*console.log("TEST");
+                console.log(rooms);
+                console.log(msg.guild.id);
+                console.log(rooms[msg.guild.id]);*/
+                if (Array.isArray(rooms[msg.guild.id]['Users'][msg.author.id])) {
+                    rooms[msg.guild.id]['Users'][msg.author.id].push(role.id);
                 }
                 else {
-                    rooms[msg.author.id] = [];
-                    rooms[msg.author.id].push(role.id);
+                    rooms[msg.guild.id]['Users'][msg.author.id] = [];
+                    rooms[msg.guild.id]['Users'][msg.author.id].push(role.id);
                 }
-                console.log(rooms);
+                //console.log(rooms);
                 const everyoneRole = msg.guild.roles.cache.find(role => role.name.toLowerCase() === "@everyone");
 
                 msg.guild.channels.create(name, {
                     type: 'voice',
                     reason: 'privateroom',
-                    parent: PCCategoryID,
+                    parent: rooms[msg.guild.id]['PCCID'],
                     permissionOverwrites: [
                         {
                             id: role.id,
@@ -150,7 +162,7 @@ bot.on('message', msg => {
         let name = args.shift().toLowerCase();
         let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
         if (role !== undefined) {
-            if (Array.isArray(rooms[msg.author.id]) && rooms[msg.author.id].find(r => r == role.id)) {
+            if (Array.isArray(rooms[msg.guild.id]['Users'][msg.author.id]) && rooms[msg.guild.id]['Users'][msg.author.id].find(r => r == role.id)) {
                 msg.mentions.members.each(member => {
                     member.roles.add(role);
                 })
@@ -161,7 +173,7 @@ bot.on('message', msg => {
         let name = args.shift().toLowerCase();
         let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
         if (role !== undefined) {
-            if (Array.isArray(rooms[msg.author.id]) && rooms[msg.author.id].find(r => r == role.id)) {
+            if (Array.isArray(rooms[msg.guild.id]['Users'][msg.author.id]) && rooms[msg.guild.id]['Users'][msg.author.id].find(r => r == role.id)) {
                 msg.mentions.members.each(member => {
                     member.roles.remove(role);
                 })
@@ -172,7 +184,7 @@ bot.on('message', msg => {
         let channelname = msg.member.voice.channel.name;
         //console.log(channelname);
         const role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === channelname.toLowerCase());
-        if (Array.isArray(rooms[msg.author.id]) && rooms[msg.author.id].find(r => r == role.id)) {
+        if (Array.isArray(rooms[msg.guild.id]['Users'][msg.author.id]) && rooms[msg.guild.id]['Users'][msg.author.id].find(r => r == role.id)) {
             msg.mentions.members.each(member => {
                 member.voice.setChannel(null);
             });
@@ -212,22 +224,22 @@ function deleteShit(name, msg) {
     //let channel = bot.guilds.get('729219573290762282').channels.cache.find(c => c.id == channelID);
     //console.log(channel);
     if (channelNameFlag !== undefined) {
-        if (channelNameFlag.parentID == PCCategoryID) {
+        if (channelNameFlag.parentID == rooms[msg.guild.id]['PCCID']) {
             const everyoneRole = msg.guild.roles.cache.find(role => role.name.toLowerCase() === "@everyone");
             //channelNameFlag.overwritePermissions(everyoneRole, { 'CONNECT': true });
             channelNameFlag.delete();
             if (roleNameFlag !== undefined) roleNameFlag.delete();
-            if (rooms[msg.author.id] !== undefined) {
+            if (rooms[msg.guild.id]['Users'][msg.author.id] !== undefined) {
                 let idx = "";
-                for (let i = 0; i < rooms[msg.author.id].length; i++) {
-                    if (rooms[msg.author.id][i] == roleNameFlag.id)
+                for (let i = 0; i < rooms[msg.guild.id]['Users'][msg.author.id].length; i++) {
+                    if (rooms[msg.guild.id]['Users'][msg.author.id][i] == roleNameFlag.id)
                         idx = i;
                 }
-                rooms[msg.author.id].splice(idx, 1);
-                if (rooms[msg.author.id].length < 1) {
-                    let roomKeys = Object.keys(rooms);
+                rooms[msg.guild.id]['Users'][msg.author.id].splice(idx, 1);
+                if (rooms[msg.guild.id]['Users'][msg.author.id].length < 1) {
+                    let roomKeys = Object.keys(rooms[msg.guild.id]['Users']);
                     let idx2 = roomKeys.find(key => key === msg.author.id);
-                    delete rooms[idx2];
+                    delete rooms[msg.guild.id]['Users'][idx2];
                 }
                 //console.log(rooms);
             }
