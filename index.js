@@ -3,8 +3,11 @@ const bot = new Discord.Client();
 const config = require('./config.json');
 const prefix = config['Prefix'];
 
+//https://discord.com/oauth2/authorize?client_id=798368592277667840&scope=bot&permissions=2147483647
+
 let timer;
-let PCCategoryID = "799508602326745118";
+//let PCCategoryID = "799508602326745118";
+let PCCategoryID = "801630815356059679";
 let overrideID = "125760087221338114";
 let rooms = {};
 
