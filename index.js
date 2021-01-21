@@ -39,6 +39,7 @@ bot.on('message', msg => {
         str += "\'delete\',\'-d\' -- delete a private room and role .... SYNTAX: !pr delete [name]\n";
         str += "\'addrole\', \'-ar\' -- add a role to a user .... SYNTAX: !pr addrole [name] [@user1] [@user2]\n";
         str += "\'removerole\', \'-rr\' -- remove a role from a user .... SYNTAX: !pr removerole [name] [@user1] [@user2]\n";
+        str += "\'kick\', \'-k\' -- kick a user from a voice channel .... SYNTAX: !pr kick [@user1] [@user2]\n";
 
 
         msg.channel.send(str);
