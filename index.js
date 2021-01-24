@@ -8,7 +8,6 @@ const host = process.env.dbhost;
 const user = process.env.dbuser;
 const pass = process.env.dbpass;
 
-//https://discord.com/oauth2/authorize?client_id=798368592277667840&scope=bot&permissions=2147483647
 
 let timer;
 
