@@ -1,196 +1,199 @@
 const Discord = require("discord.js");
 const bot = new Discord.Client();
-const config = require('./config.json');
-const prefix = config['Prefix'];
+const config = require('./config.json')
+require('dotenv').config();
+var mysql = require('mysql');
+const prefix = process.env.Prefix;
+const host = process.env.dbhost;
+const user = process.env.dbuser;
+const pass = process.env.dbpass;
 
 //https://discord.com/oauth2/authorize?client_id=798368592277667840&scope=bot&permissions=2147483647
 
 let timer;
-let PCCategoryIDa = "799508602326745118"; //BotServer
-let PCCategoryIDb = "801630815356059679"; //The Sandbox
-let overrideID = "125760087221338114";
-let MBSID = "729219573290762282";
-let sandboxID = "591094590199824430";
-let rooms = {
-    [MBSID]: { "Users": {}, "PCCID": "799508602326745118" },
-    [sandboxID]: { "Users": {}, "PCCID": "801630815356059679" }
-};
+
+var conn = mysql.createConnection({
+    host: host,
+    user: user,
+    password: pass,
+    port: '3306'
+});
 
 
+//db connection
+conn.connect(err => {
+    if (err) {
+        console.error("Error Connecting: " + err.stack);
+        return;
+    }
+    //console.log("Connected as ID: " + conn.threadId);
+});
 
 
-bot.login(config['BOT_TOKEN']);
+bot.login(process.env.BOT_TOKEN);
 
 bot.once('ready', () => {
     console.log("Ready");
 });
 
 bot.on('message', msg => {
-    console.log(msg.guild.id);
-    //console.log("New Stuff");
-    //console.log(msg.content);
-    //console.log(msg.content.startsWith(prefix) ? "true" : "false");
-    //console.log(msg.member);
-    if (!msg.content.startsWith(prefix)) return;
-    if (!msg.member) return;
-    let args = msg.content.slice(prefix.length).trim().split(' ');
-    let cmd = args.shift().toLowerCase();
-    if (cmd == "help" || cmd == "-h") {
-        //msg.channel.send(cmd);
-        let str = "Hello, I create private rooms so that people do their own thing if they want.\n";
-        str += "\nCommand List\n-------------------------\n";
-        str += "Prefix: !pr\n";
-        /*str += "add [name] [@username] ..... Ex: !pr add test @user1 @user2\n";
-        str += "delete [name] .... Ex: !pr delete test\n";
-        str += "addrole [@username] .... Ex: !pr addrole @user1 @user2\n";
-        str += "removerole [@username] .... Ex: !pr removerole @user1 @user2\n";*/
-
-
-        str += "\'add\', \'-a\' -- add a private room and role .... SYNTAX: !pr add [name] [@user1] [@user2]\n";
-        str += "\'delete\',\'-d\' -- delete a private room and role .... SYNTAX: !pr delete [name]\n";
-        str += "\'addrole\', \'-ar\' -- add a role to a user .... SYNTAX: !pr addrole [name] [@user1] [@user2]\n";
-        str += "\'removerole\', \'-rr\' -- remove a role from a user .... SYNTAX: !pr removerole [name] [@user1] [@user2]\n";
-        str += "\'kick\', \'-k\' -- kick a user from a voice channel .... SYNTAX: !pr kick [@user1] [@user2]\n";
-
-
-        msg.channel.send(str);
-        //msg.channel.send(args);
+    let serverid = msg.guild.id;
+    let PrivateChannelCategory = msg.guild.channels.cache.find(channel => channel.name.toLowerCase() === "private channels");
+    if (PrivateChannelCategory === undefined) {
+        console.log("needs a PC Category");
+        return;
     }
-    else if (cmd == "add" || cmd == "-a") {
+    else {
+        let PCID = PrivateChannelCategory.id;
+
         let submitted = msg.author;
-        //args.shift().toLowerCase();
-        let name = args.shift().toLowerCase();
-        console.log("User [" + submitted.username + "] is attempting to create PR with a name of [" + name + "]");
-        //msg.guild.roles.cache.each(role => { console.log(role.id) });
-        let roleNameFlag = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
-        let channelNameFlag = msg.guild.channels.cache.find(channel => channel.name.toLowerCase() === name);
-        if (roleNameFlag === undefined && channelNameFlag === undefined) {
-            /*createRole(name, msg)
-                .then(function (role) {
-                    console.log("2");
-                    addPRRole(role, submitted, msg);
-            })*/
-            //let role2 = msg.guild.roles.cache.find(role3 => role3.name === "testRole");
-            //console.log(role.id + " - " + role2.id);
-            //msg.member.roles.add(role2);
-            //console.log(msg.member.roles);
+        if (!msg.content.startsWith(prefix)) return;
+        if (!msg.member) return;
+        let args = msg.content.slice(prefix.length).trim().split(' ');
+        let cmd = args.shift().toLowerCase();
+
+
+        //get cmds
+        if (cmd == "help" || cmd == "-h") {
+            let str = "Hello, I create private rooms so that people do their own thing if they want.\n";
+            str += "\nCommand List\n-------------------------\n";
+            str += "Prefix: !pr\n";
+
+
+            str += "\'add\', \'-a\' -- add a private room and role .... SYNTAX: !pr add [name] [@user1] [@user2]\n";
+            str += "\'delete\',\'-d\' -- delete a private room and role .... SYNTAX: !pr delete [name]\n";
+            str += "\'addrole\', \'-ar\' -- add a role to a user .... SYNTAX: !pr addrole [name] [@user1] [@user2]\n";
+            str += "\'removerole\', \'-rr\' -- remove a role from a user .... SYNTAX: !pr removerole [name] [@user1] [@user2]\n";
+            str += "\'kick\', \'-k\' -- kick a user from a voice channel .... SYNTAX: !pr kick [@user1] [@user2]\n";
+
+
+            msg.channel.send(str);
+        }
+        //add a pr room and role
+        else if (cmd == "add" || cmd == "-a") {
+            let name = args.shift().toLowerCase();
+            console.log("User [" + submitted.username + "] is attempting to create PR with a name of [" + name + "]");
+            let roleNameFlag = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
+            let channelNameFlag = msg.guild.channels.cache.find(channel => channel.name.toLowerCase() === name);
+            if (roleNameFlag === undefined && channelNameFlag === undefined) {
 
 
 
-            msg.guild.roles.create({
-                data: {
-                    name: name,
-                    color: "BLUE"
-                },
-                reason: 'privateroom'
-            }).then(role => {
-                msg.member.roles.add(role);
+                msg.guild.roles.create({
+                    data: {
+                        name: name,
+                        color: "BLUE"
+                    },
+                    reason: 'privateroom'
+                }).then(role => {
+                    msg.member.roles.add(role);
 
-                //rooms[msg.author].push(role);
-                /*console.log("TEST");
-                console.log(rooms);
-                console.log(msg.guild.id);
-                console.log(rooms[msg.guild.id]);*/
-                if (Array.isArray(rooms[msg.guild.id]['Users'][msg.author.id])) {
-                    rooms[msg.guild.id]['Users'][msg.author.id].push(role.id);
+
+                    conn.query("INSERT INTO DiscordBots.privatebot_default (serverid, PCCID, memberid, prid) VALUES (" + serverid + ", " + PCID + ", " + submitted.id + ", " + role.id + ")", (err, result, fields) => {
+                        if (err) throw err;
+                    });
+
+                    const everyoneRole = msg.guild.roles.cache.find(role => role.name.toLowerCase() === "@everyone");
+
+                    msg.guild.channels.create(name, {
+                        type: 'voice',
+                        reason: 'privateroom',
+                        parent: PCID,
+                        permissionOverwrites: [
+                            {
+                                id: role.id,
+                                allow: ["CONNECT"]
+                            },
+                            {
+                                id: everyoneRole.id,
+                                deny: ["CONNECT"]
+                            }
+                        ]
+                    }).then((channel) => {
+                        console.log("PR channel and role [" + name + "] has been created");
+                        setTimeout(() => { setTimer(channel, name, msg) }, 10000);
+
+                        msg.mentions.members.each(member => {
+                            member.roles.add(role);
+                        })
+                    }).catch(console.error);
+
+                }).catch(console.error);
+            }
+            else {
+                console.log("PR failed due to existing channel or role of the same name");
+            }
+
+        }
+        //delete pr channel role
+        else if (cmd == "delete" || cmd == "-d") {
+            let name = args.shift().toLowerCase();
+            deleteShit(name, msg)
+        }
+        //add a role to a member
+        else if (cmd == "addrole" || cmd == "-ar") {
+            let name = args.shift().toLowerCase();
+            let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
+            if (role !== undefined) {
+
+                conn.query("SELECT * FROM DiscordBots.privatebot_default WHERE serverid = " + serverid + " AND memberid = " + submitted.id + " AND prid = " + role.id, (err, result, fields) => {
+                    if (err) throw err;
+                    console.log("SELECT SHIT");
+                    console.log(result);
+                    if (result.length > 0) {
+                        msg.mentions.members.each(member => {
+                            member.roles.add(role);
+                        });
+                    }
+                    else {
+                        console.log("AR ERR: does not exist in db");
+                    }
+                });
+
+
+            } else { console.log("AR ERR: undefined role") }
+        }
+        //remove a role from a member
+        else if (cmd == "removerole" || cmd == "-rr") {
+            let name = args.shift().toLowerCase();
+            let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
+            if (role !== undefined) {
+
+                conn.query("SELECT * FROM DiscordBots.privatebot_default WHERE serverid = " + serverid + " AND memberid = " + submitted.id + " AND prid = " + role.id, (err, result, fields) => {
+                    if (err) throw err;
+                    console.log("SELECT SHIT");
+                    console.log(result);
+                    if (result.length > 0) {
+                        msg.mentions.members.each(member => {
+                            member.roles.remove(role);
+                        });
+                    }
+                    else {
+                        console.log("RR ERR: does not exist in db");
+                    }
+                });
+
+            } else { console.log("RR ERR: undefined role") }
+        }
+        //kick a member from a voice channel
+        else if (cmd == "kick" || "-k") {
+            let channelname = msg.member.voice.channel.name;
+            const role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === channelname.toLowerCase());
+
+
+            conn.query("SELECT * FROM DiscordBots.privatebot_default WHERE serverid = " + serverid + " AND memberid = " + submitted.id + " AND prid = " + role.id, (err, result, fields) => {
+                if (err) throw err;
+                console.log("SELECT SHIT");
+                console.log(result);
+                if (result.length > 0) {
+                    msg.mentions.members.each(member => {
+                        member.voice.setChannel(null);
+                    });
                 }
                 else {
-                    rooms[msg.guild.id]['Users'][msg.author.id] = [];
-                    rooms[msg.guild.id]['Users'][msg.author.id].push(role.id);
+                    console.log(msg.author.username + " does not have the ability to disconnect users.");
                 }
-                //console.log(rooms);
-                const everyoneRole = msg.guild.roles.cache.find(role => role.name.toLowerCase() === "@everyone");
-
-                msg.guild.channels.create(name, {
-                    type: 'voice',
-                    reason: 'privateroom',
-                    parent: rooms[msg.guild.id]['PCCID'],
-                    permissionOverwrites: [
-                        {
-                            id: role.id,
-                            allow: ["CONNECT"]
-                        },
-                        {
-                            id: everyoneRole.id,
-                            deny: ["CONNECT"]
-                        }
-                    ]
-                }).then((channel) => {
-                    console.log("PR channel and role [" + name + "] has been created");
-                    setTimeout(() => { setTimer(channel, name, msg) }, 10000);
-                    //console.log(channel.parent);
-                    //console.log(channel.parentID);
-                    /*setTimeout(() => {
-                        let mems = channel.members;
-                        console.log("test");
-                        for (let [snowflake, guildMember] of mems) {
-                            console.log('snowflake: ' + snowflake);
-                            console.log('id: ' + guildMember.id);
-                            console.log('user id: ' + guildMember.user.id);
-                        }
-                    }, 5000);*/
-
-                    msg.mentions.members.each(member => {
-                        //console.log(member.username);
-                        member.roles.add(role);
-                    })
-                }).catch(console.error);
-
-            }).catch(console.error);
-
-            //
-            /*
-            let channelFlag = createRoom(name, roleFlag, msg);
-            console.log(name + " - " + roleNameFlag + " - " + channelNameFlag);
-            let ray = msg.mentions.users.each(e => {
-                //console.log(e);
-                addRole(roleFlag, submitted);
-            });*/
-
-            //console.log(ray);
-        }
-        else {
-            console.log("PR failed due to existing channel or role of the same name");
-        }
-
-    }
-    else if (cmd == "delete" || cmd == "-d") {
-        let name = args.shift().toLowerCase();
-        deleteShit(name, msg)
-    }
-    else if (cmd == "addrole" || cmd == "-ar") {
-        let name = args.shift().toLowerCase();
-        let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
-        if (role !== undefined) {
-            if (Array.isArray(rooms[msg.guild.id]['Users'][msg.author.id]) && rooms[msg.guild.id]['Users'][msg.author.id].find(r => r == role.id)) {
-                msg.mentions.members.each(member => {
-                    member.roles.add(role);
-                })
-            } else { console.log("AR ERR: does not exist in array thing") }
-        } else { console.log("AR ERR: undefined role") }
-    }
-    else if (cmd == "removerole" || cmd == "-rr") {
-        let name = args.shift().toLowerCase();
-        let role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
-        if (role !== undefined) {
-            if (Array.isArray(rooms[msg.guild.id]['Users'][msg.author.id]) && rooms[msg.guild.id]['Users'][msg.author.id].find(r => r == role.id)) {
-                msg.mentions.members.each(member => {
-                    member.roles.remove(role);
-                })
-            } else { console.log("RR ERR: does not exist in array thing") }
-        } else { console.log("RR ERR: undefined role") }
-    }
-    else if (cmd == "kick" || "-k") {
-        let channelname = msg.member.voice.channel.name;
-        //console.log(channelname);
-        const role = msg.guild.roles.cache.find(role => role.name.toLowerCase() === channelname.toLowerCase());
-        if (Array.isArray(rooms[msg.guild.id]['Users'][msg.author.id]) && rooms[msg.guild.id]['Users'][msg.author.id].find(r => r == role.id)) {
-            msg.mentions.members.each(member => {
-                member.voice.setChannel(null);
             });
-        }
-        else {
-            console.log(msg.author.username + " does not have the ability to disconnect users.");
         }
     }
 });
@@ -198,14 +201,9 @@ bot.on('message', msg => {
 function setTimer(channel, name, msg) {
     setTimeout(() => {
         let mems = channel.members;
-        //console.log("test");
         let i = 0;
         for (let [snowflake, guildMember] of mems) {
-
             i++;
-            //console.log('snowflake: ' + snowflake);
-            //console.log('id: ' + guildMember.id);
-            //console.log('user id: ' + guildMember.user.id);
         }
         if (i > 0) {
             setTimer(channel, name, msg);
@@ -219,70 +217,28 @@ function setTimer(channel, name, msg) {
 function deleteShit(name, msg) {
     let roleNameFlag = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
     let channelNameFlag = msg.guild.channels.cache.find(channel => channel.name.toLowerCase() === name);
-    let channelID = "799380327654490114";
+    let PrivateChannelCategory = msg.guild.channels.cache.find(channel => channel.name.toLowerCase() === "private channels");
+    if (PrivateChannelCategory === undefined) {
+        console.log("needs a PC Category");
+        return;
+    }
+    else {
+        let PCID = PrivateChannelCategory.id;
+        let serverid = msg.guild.id;
+        let channelID = "799380327654490114";
+        let submitted = msg.author;
 
-    //let channel = bot.guilds.get('729219573290762282').channels.cache.find(c => c.id == channelID);
-    //console.log(channel);
-    if (channelNameFlag !== undefined) {
-        if (channelNameFlag.parentID == rooms[msg.guild.id]['PCCID']) {
-            const everyoneRole = msg.guild.roles.cache.find(role => role.name.toLowerCase() === "@everyone");
-            //channelNameFlag.overwritePermissions(everyoneRole, { 'CONNECT': true });
-            channelNameFlag.delete();
-            if (roleNameFlag !== undefined) roleNameFlag.delete();
-            if (rooms[msg.guild.id]['Users'][msg.author.id] !== undefined) {
-                let idx = "";
-                for (let i = 0; i < rooms[msg.guild.id]['Users'][msg.author.id].length; i++) {
-                    if (rooms[msg.guild.id]['Users'][msg.author.id][i] == roleNameFlag.id)
-                        idx = i;
-                }
-                rooms[msg.guild.id]['Users'][msg.author.id].splice(idx, 1);
-                if (rooms[msg.guild.id]['Users'][msg.author.id].length < 1) {
-                    let roomKeys = Object.keys(rooms[msg.guild.id]['Users']);
-                    let idx2 = roomKeys.find(key => key === msg.author.id);
-                    delete rooms[msg.guild.id]['Users'][idx2];
-                }
-                //console.log(rooms);
+        if (channelNameFlag !== undefined) {
+            if (channelNameFlag.parentID == PCID) {
+                channelNameFlag.delete();
+                if (roleNameFlag !== undefined) roleNameFlag.delete();
+                conn.query("DELETE FROM DiscordBots.privatebot_default WHERE serverid = " + serverid + " AND memberid = " + submitted.id + " AND prid = " + roleNameFlag.id, (err, result) => {
+                    if (err) throw err;
+                });
             }
-
-        }
-        else {
-            console.log("User [" + msg.author.username + "] tried to delete a none PR channel/role.");
+            else {
+                console.log("User [" + msg.author.username + "] tried to delete a none PR channel/role.");
+            }
         }
     }
 }
-
-/*
-async function createRoom(room, role, msg) {
-    msg.guild.channels.create(room, {
-        type: 'voice',
-        reason: 'privateroom',
-        parent: "798660801300660295",
-        permissionOverwrites: [
-            {
-                id: role.id,
-                allow: ["CONNECT"]
-            }
-        ]
-    }).then((channel) => {
-
-    }).catch(console.error);
-}
-
-async function createRole(role, msg) {
-    msg.guild.roles.create({
-        data: {
-            name: role,
-            color: "BLUE"
-        },
-        reason: 'privateroom'
-    }).then(r => { console.log("1"); return r }).catch(console.error);
-}
-
-async function addPRRole(role, user, msg) {
-    console.log("3" + role + " | " + user);
-}
-
-async function extendTime() {
-
-}
-*/
