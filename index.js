@@ -213,7 +213,7 @@ function setTimer(channel, name, msg) {
         else {
             deleteShit(name, msg);
         }
-    }, 1000);
+    }, 10000);
 }
 
 function deleteShit(name, msg) {
