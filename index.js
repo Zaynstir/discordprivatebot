@@ -127,7 +127,7 @@ bot.on('message', msg => {
         //delete pr channel role
         else if (cmd == "delete" || cmd == "-d") {
             let name = args.shift().toLowerCase();
-            deleteShit(name, msg)
+            deletePR(name, msg)
         }
         //add a role to a member
         else if (cmd == "addrole" || cmd == "-ar") {
@@ -208,12 +208,12 @@ function setTimer(channel, name, msg) {
             setTimer(channel, name, msg);
         }
         else {
-            deleteShit(name, msg);
+            deletePR(name, msg);
         }
     }, 10000);
 }
 
-function deleteShit(name, msg) {
+function deletePR(name, msg) {
     let roleNameFlag = msg.guild.roles.cache.find(role => role.name.toLowerCase() === name);
     let channelNameFlag = msg.guild.channels.cache.find(channel => channel.name.toLowerCase() === name);
     let PrivateChannelCategory = msg.guild.channels.cache.find(channel => channel.name.toLowerCase() === "private channels");
