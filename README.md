@@ -1,4 +1,4 @@
-#Private Bot#
+# Private Bot #
 
 **Description:** 
 This discord bot dynamically creates and destroys private chat rooms and corresponding roles depending on the commands inserted by users. This bot is primarily used if members of a discord server was a private room to talk, but do not want to make a group dm.
